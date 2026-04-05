@@ -1,5 +1,5 @@
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { generateText } from 'ai';
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { generateText } from "ai";
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -9,11 +9,11 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const { text } = await generateText({
-    model: openrouter('openai/gpt-oss-20b:free'),
-  messages: [
-    {
-      role: "system",
-      content: `
+    model: openrouter("openai/gpt-oss-20b:free"),
+    messages: [
+      {
+        role: "system",
+        content: `
       You're an expert book recommender.
       Reply ONLY in valid JSON format.
 
@@ -38,11 +38,11 @@ export async function POST(req: Request) {
       {
         "error": "Sorry, I can only help you find books."
       }
-      `
-          },
-          ...messages
-        ],
-    });
+      `,
+      },
+      ...messages,
+    ],
+  });
 
   return Response.json({ text });
 }

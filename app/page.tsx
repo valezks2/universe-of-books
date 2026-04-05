@@ -1,21 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
-import HomeUser from "./components/home/HomeUser";
-import HomeGuest from "./components/home/HomeGuest";
+import { Suspense } from "react";
+import AuthManager from "../providers/AuthProvider";
 
-export default async function Home() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    return (
-      <HomeUser
-        displayName={user.user_metadata?.display_name}
-      />
-    );
-  }
-
-  return <HomeGuest />;
+export default function Home() {
+  return (
+    <Suspense
+      fallback={<div className="min-h-screen bg-white dark:bg-[#111]" />}
+    >
+      <AuthManager />
+    </Suspense>
+  );
 }

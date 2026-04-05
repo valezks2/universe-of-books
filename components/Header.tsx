@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaHeart, FaUser, FaHistory } from "react-icons/fa";
-import { createClient } from "../../lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
@@ -29,7 +29,7 @@ export default function Header() {
     } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, session: Session | null) => {
         setUser(session?.user ?? null);
-      }
+      },
     );
 
     return () => subscription.unsubscribe();
@@ -57,55 +57,60 @@ export default function Header() {
     await supabase.auth.signOut();
     setMenuOpen(false);
     router.push("/");
-    router.refresh(); 
+    router.refresh();
   };
 
   return (
-    <header className="sticky top-0 z-[99] flex items-center justify-between border-b border-[#ededed] bg-[#fafafb] px-[38px] py-[22px] max-[680px]:flex-col max-[680px]:gap-3 max-[680px]:px-2 max-[680px]:py-4">
+    <header className="sticky top-0 z-[99] flex items-center justify-between border-b border-[#ededed] dark:border-[#333] bg-[#fafafb] dark:bg-[#111] px-[38px] py-[22px] max-[680px]:flex-col max-[680px]:gap-3 max-[680px]:px-2 max-[680px]:py-4 transition-colors duration-300">
       <Link href="/">
         <Image
           src="/img/logo.png"
           alt="logo"
           width={180}
           height={60}
-          className="h-[50px] w-auto grayscale-0 max-[680px]:h-[40px] select-none" 
+          className="h-[50px] w-auto grayscale-0 dark:invert max-[680px]:h-[40px] select-none"
           priority
           draggable={false}
         />
       </Link>
 
       <div className="flex gap-6 items-center">
-        <Link href="/history" className="p-2 text-[#212529] opacity-80 hover:opacity-100 transition-opacity">
+        <Link
+          href="/history"
+          className="p-2 text-[#212529] dark:text-[#eee] opacity-80 hover:opacity-100 transition-opacity"
+        >
           <FaHistory size={24} />
         </Link>
 
-        <Link href="/favorites" className="p-2 text-[#212529] opacity-80 hover:opacity-100 transition-opacity">
+        <Link
+          href="/favorites"
+          className="p-2 text-[#212529] dark:text-[#eee] opacity-80 hover:opacity-100 transition-opacity"
+        >
           <FaHeart size={24} />
         </Link>
 
         <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen((p) => !p)}
-            className="p-2 text-[#212529] opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+            className="p-2 text-[#212529] dark:text-[#eee] opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
           >
             <FaUser size={24} />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border border-[#ededed] rounded-md shadow-md">
-
+            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-md overflow-hidden">
               {!user ? (
                 <>
                   <Link
                     href="/auth/login"
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    className="block px-4 py-2 text-[#212529] dark:text-[#eee] hover:bg-[#f0f0f0] dark:hover:bg-[#252525] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     Login
                   </Link>
                   <Link
                     href="/auth/sign-up"
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    className="block px-4 py-2 text-[#212529] dark:text-[#eee] hover:bg-[#f0f0f0] dark:hover:bg-[#252525] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     Sign Up
@@ -115,21 +120,19 @@ export default function Header() {
                 <>
                   <Link
                     href="/account"
-                    className="block px-4 py-2 hover:bg-gray-100"
+                    className="block px-4 py-2 text-[#212529] dark:text-[#eee] hover:bg-[#f0f0f0] dark:hover:bg-[#252525] transition-colors"
                     onClick={() => setMenuOpen(false)}
                   >
                     My account
                   </Link>
-
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    className="w-full text-left px-4 py-2 text-[#212529] dark:text-[#eee] hover:bg-[#f0f0f0] dark:hover:bg-[#252525] cursor-pointer transition-colors"
                   >
                     Log out
                   </button>
                 </>
               )}
-
             </div>
           )}
         </div>

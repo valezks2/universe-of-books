@@ -1,6 +1,12 @@
 "use client";
 import { useState, FormEvent, useRef, useEffect } from "react";
-import { Book as BookIcon, Heart, SendHorizonal, User, Bot } from "lucide-react";
+import {
+  Book as BookIcon,
+  Heart,
+  SendHorizonal,
+  User,
+  Bot,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Book = {
@@ -43,7 +49,9 @@ function BookCards({ books }: { books: Book[] }) {
     if (isFavorite) {
       await supabase.from("favorites").delete().eq("title", book.title);
     } else {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return alert("Inicia sesión para guardar");
       await supabase.from("favorites").insert([
         {
@@ -61,24 +69,33 @@ function BookCards({ books }: { books: Book[] }) {
       {books.map((book, i) => {
         const isFavorite = favorites.has(book.title);
         return (
-          <div key={i} className="group flex items-center justify-between p-5 bg-white border border-[#ededed] rounded-2xl transition hover:border-[#ccc] hover:shadow-sm">
+          <div
+            key={i}
+            className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm"
+          >
             <div className="flex items-start gap-4">
-              <div className="mt-1 bg-[#f5f5f5] p-2.5 rounded-full text-[#555] group-hover:bg-[#e7e7e7] transition">
+              <div className="mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] group-hover:bg-[#e7e7e7] dark:group-hover:bg-[#333] transition">
                 <BookIcon size={18} />
               </div>
               <div className="flex-1">
-                <h3 className="text-[1.05em] font-medium text-[#222] mb-0.5">{book.title}</h3>
-                <div className="flex items-center gap-1.5 text-[0.85em] text-[#666] mb-2">
-                  <User size={14} className="text-[#888]" />
+                <h3 className="text-[1.05em] font-medium text-[#222] dark:text-[#eee] mb-0.5">
+                  {book.title}
+                </h3>
+                <div className="flex items-center gap-1.5 text-[0.85em] text-[#666] dark:text-[#aaa] mb-2">
+                  <User size={14} className="text-[#888] dark:text-[#777]" />
                   <span className="font-medium">{book.author}</span>
                 </div>
-                <p className="text-[#888] text-[0.9em] line-clamp-2">{book.synopsis}</p>
+                <p className="text-[#888] dark:text-[#888] text-[0.9em] line-clamp-2">
+                  {book.synopsis}
+                </p>
               </div>
             </div>
             <button
               onClick={() => toggleFavorite(book)}
               className={`ml-4 p-2 rounded-full transition-all cursor-pointer ${
-                isFavorite ? "text-red-500 bg-red-50" : "text-[#999] hover:text-red-500 hover:bg-red-50"
+                isFavorite
+                  ? "text-red-500 bg-red-50 dark:bg-red-900/20"
+                  : "text-[#999] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
               }`}
             >
               <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
@@ -95,7 +112,9 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeChatId, setActiveChatId] = useState<string | null>(initialChatId || null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(
+    initialChatId || null,
+  );
 
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -109,11 +128,13 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
         .order("created_at", { ascending: true });
 
       if (data) {
-        setMessages(data.map(m => ({
-          text: m.content || undefined,
-          sender: m.role as "user" | "bot",
-          books: m.books_metadata || undefined
-        })));
+        setMessages(
+          data.map((m) => ({
+            text: m.content || undefined,
+            sender: m.role as "user" | "bot",
+            books: m.books_metadata || undefined,
+          })),
+        );
         setActiveChatId(initialChatId);
       }
     };
@@ -136,14 +157,17 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       let chatId = activeChatId;
 
       if (user && !chatId) {
         const { data: newChat } = await supabase
           .from("chats")
           .insert([{ user_id: user.id, title: prompt.substring(0, 35) }])
-          .select().single();
+          .select()
+          .single();
         if (newChat) {
           chatId = newChat.id;
           setActiveChatId(chatId);
@@ -151,7 +175,9 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
       }
 
       if (user && chatId) {
-        await supabase.from("chat_messages").insert([{ chat_id: chatId, role: "user", content: prompt }]);
+        await supabase
+          .from("chat_messages")
+          .insert([{ chat_id: chatId, role: "user", content: prompt }]);
       }
 
       const response = await fetch("/api/chat", {
@@ -168,83 +194,99 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
         if (parsed.books && Array.isArray(parsed.books)) {
           botMsg = { sender: "bot", books: parsed.books };
           if (user && chatId) {
-            await supabase.from("chat_messages").insert([{ chat_id: chatId, role: "bot", books_metadata: parsed.books }]);
+            await supabase
+              .from("chat_messages")
+              .insert([
+                { chat_id: chatId, role: "bot", books_metadata: parsed.books },
+              ]);
           }
         } else {
           botMsg = { text: data.text, sender: "bot" };
           if (user && chatId) {
-            await supabase.from("chat_messages").insert([{ chat_id: chatId, role: "bot", content: data.text }]);
+            await supabase
+              .from("chat_messages")
+              .insert([{ chat_id: chatId, role: "bot", content: data.text }]);
           }
         }
       } catch {
         botMsg = { text: data.text, sender: "bot" };
         if (user && chatId) {
-          await supabase.from("chat_messages").insert([{ chat_id: chatId, role: "bot", content: data.text }]);
+          await supabase
+            .from("chat_messages")
+            .insert([{ chat_id: chatId, role: "bot", content: data.text }]);
         }
       }
 
       setMessages((prev) => [...prev, botMsg]);
     } catch {
-  const errorMsg: Message = { text: "Something went wrong.", sender: "bot" };
-  setMessages((prev) => [...prev, errorMsg]);
+      const errorMsg: Message = {
+        text: "Something went wrong.",
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user && activeChatId) {
-    await supabase.from("chat_messages").insert([
-      { 
-        chat_id: activeChatId, 
-        role: "bot", 
-        content: "Something went wrong."
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && activeChatId) {
+        await supabase.from("chat_messages").insert([
+          {
+            chat_id: activeChatId,
+            role: "bot",
+            content: "Something went wrong.",
+          },
+        ]);
       }
-    ]);
-  }
-  } finally {
-    setLoading(false);
-  }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <main className={`min-h-screen bg-white flex flex-col items-center px-4 transition-all duration-500 ${messages.length === 0 ? "justify-center" : "py-12"}`}>
+    <main
+      className={`min-h-screen bg-white dark:bg-[#111] text-[#222] dark:text-[#eee] flex flex-col items-center px-4 transition-all duration-500 ${messages.length === 0 ? "justify-center" : "py-12"}`}
+    >
       <div className="w-full max-w-2xl">
-        <div className="mb-10">
-          {messages.length === 0 && (
+        {messages.length === 0 && (
           <div className="mb-10 animate-in fade-in duration-700">
-            <h1 className="font-poppins text-2xl text-center font-medium text-[#212529] mb-2 tracking-tight">
+            <h1 className="font-poppins text-2xl text-center font-medium text-[#212529] dark:text-white mb-2 tracking-tight">
               Welcome, {displayName || "name"}.
             </h1>
-            <p className="text-[#666] text-center text-[0.98em]">
+            <p className="text-[#666] dark:text-[#aaa] text-center text-[0.98em]">
               The chatbot is ready to help!
             </p>
           </div>
         )}
-        </div>
 
         <div ref={chatRef} className="space-y-4 mb-8">
           {messages.map((msg, index) => (
-            <div key={index}>
-              <div className="flex-1">
-                {msg.text && (
-                  <div className="group flex items-start gap-4 p-5 bg-white border border-[#ededed] rounded-2xl transition hover:border-[#ccc] hover:shadow-sm">
-                    <div className={`mt-1 bg-[#f5f5f5] p-2.5 rounded-full text-[#555] ${msg.sender === "user" ? "order-2" : ""}`}>
-                      {msg.sender === "user" ? <User size={18} /> : <Bot size={18} />}
-                    </div>
-                    <p className={`text-[#222] text-[0.95em] leading-relaxed ${msg.sender === "user" ? "ml-auto text-right" : ""}`}>
-                    {(() => {
-                      try {
-                        const parsed = JSON.parse(msg.text);
-                        return parsed.error || msg.text; 
-                      } catch {
-                        return msg.text;
-                      }
-                    })()}
-                  </p>
+            <div key={index} className="flex-1">
+              {msg.text && (
+                <div className="group flex items-start gap-4 p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition hover:border-[#ccc] dark:hover:border-[#444]">
+                  <div
+                    className={`mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] ${msg.sender === "user" ? "order-2" : ""}`}
+                  >
+                    {msg.sender === "user" ? (
+                      <User size={18} />
+                    ) : (
+                      <Bot size={18} />
+                    )}
                   </div>
-                )}
-                {msg.books && <BookCards books={msg.books} />}
-              </div>
+                  <p
+                    className={`text-[#222] dark:text-[#eee] text-[0.95em] leading-relaxed ${msg.sender === "user" ? "ml-auto text-right" : ""}`}
+                  >
+                    {msg.text}
+                  </p>
+                </div>
+              )}
+              {msg.books && <BookCards books={msg.books} />}
             </div>
           ))}
-          {loading && <div className="text-sm text-[#999]">Searching...</div>}
+          {loading && (
+            <div className="text-sm text-[#666] dark:text-[#aaa] animate-pulse">
+              Searching...
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="relative">
@@ -254,9 +296,13 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
             onChange={(e) => setPrompt(e.target.value)}
             disabled={loading}
             placeholder="Describe what kind of book you want to read..."
-            className="w-full rounded-xl border border-[#ddd] px-5 py-3 text-[0.95em] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0] focus:border-[#ccc]"
+            className="w-full rounded-xl border border-border bg-background px-5 py-3 text-[0.95em] focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all"
           />
-          <button type="submit" disabled={loading} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#666] hover:text-[#222] transition">
+          <button
+            type="submit"
+            disabled={loading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-[#999] hover:text-[#222] dark:hover:text-white transition cursor-pointer"
+          >
             <SendHorizonal size={18} />
           </button>
         </form>

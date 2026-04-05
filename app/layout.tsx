@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Nunito_Sans, Poppins } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
-  
+
 const nunito = Nunito_Sans({
   variable: "--font-nunito",
   subsets: ["latin"],
@@ -34,17 +34,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${nunito.variable} ${poppins.variable} antialiased`}>
-          <ThemeProvider
+      <body className={`${nunito.variable} ${poppins.variable} antialiased`}>
+        <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-        <Header />
-        {children}
-        <Footer />
+          <Header />
+          {children}
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
