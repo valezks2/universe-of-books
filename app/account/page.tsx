@@ -24,6 +24,7 @@ function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
+  executeDeleteAccount,
   title,
   message,
   children,
@@ -61,7 +62,11 @@ function ConfirmModal({
         <div className="flex flex-col p-6 pt-0 gap-2">
           <button
             onClick={() => {
-              onConfirm();
+              if (title === "Delete Account") {
+                executeDeleteAccount();
+              } else {
+                onConfirm();
+              }
             }}
             className={`w-full rounded-full py-2.5 text-[0.95em] font-medium transition cursor-pointer ${
               isDanger
@@ -98,6 +103,7 @@ export default function AccountPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const { theme, setTheme } = useTheme();
 
@@ -122,6 +128,8 @@ export default function AccountPage() {
       }
       setEmail(user.email || "");
       setName(user.user_metadata?.display_name || "");
+      const historyPref = user.user_metadata?.save_history;
+      setSaveHistory(historyPref !== undefined ? historyPref : true);
       setLoading(false);
     };
     getUser();
@@ -131,10 +139,8 @@ export default function AccountPage() {
     e.preventDefault();
     setErrorMsg(null);
     setMessage(null);
-
     if (!name.trim()) return setErrorMsg("The name cannot be empty.");
     if (!email.trim()) return setErrorMsg("Please enter your email.");
-
     if (password.length > 0) {
       const strongPasswordRegex =
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*.,\-_])(?=.{8,})/;
@@ -144,20 +150,17 @@ export default function AccountPage() {
         );
       }
     }
-
     setSaving(true);
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("User not found.");
-
       const updates: any = {};
       if (name !== user.user_metadata?.display_name)
         updates.data = { display_name: name };
       if (email !== user.email) updates.email = email;
       if (password.length > 0) updates.password = password;
-
       if (Object.keys(updates).length > 0) {
         const { error } = await supabase.auth.updateUser(updates);
         if (error) throw error;
@@ -186,13 +189,11 @@ export default function AccountPage() {
             data: { user },
           } = await supabase.auth.getUser();
           if (!user) return;
-
           const { error } = await supabase
             .from("chats")
             .delete()
             .eq("user_id", user.id);
           if (error) throw error;
-
           setMessage("Search history deleted successfully.");
           setTimeout(() => setMessage(null), 3000);
         } catch (err: any) {
@@ -218,13 +219,11 @@ export default function AccountPage() {
             data: { user },
           } = await supabase.auth.getUser();
           if (!user) return;
-
           const { error } = await supabase
             .from("favorites")
             .delete()
             .eq("user_id", user.id);
           if (error) throw error;
-
           setMessage("Favorites cleared successfully.");
           setTimeout(() => setMessage(null), 3000);
         } catch (err: any) {
@@ -237,24 +236,79 @@ export default function AccountPage() {
     });
   };
 
-  const toggleHistory = () => setSaveHistory(!saveHistory);
+  const toggleHistory = async () => {
+    const newValue = !saveHistory;
+    setSaveHistory(newValue);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { save_history: newValue },
+      });
+      if (error) throw error;
+      setMessage("Preferencia actualizada.");
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setSaveHistory(!newValue);
+      setErrorMsg("Error: " + err.message);
+    }
+  };
 
   const handleDeleteAccount = () => {
     setConfirmPassword("");
+    setModalError(null);
     setModalConfig({
       isOpen: true,
       title: "Delete Account",
       message:
-        "Are you sure you want to delete your account? This action is permanent and irreversible. Enter your password to confirm.",
-      onConfirm: async () => {
-        if (confirmPassword.trim() === "") {
-          setErrorMsg("Please enter your password to confirm.");
-          return;
-        }
-        console.log("Procesando borrado de cuenta...");
-        closeModal();
-      },
+        "Are you sure? This action is permanent. Enter your password to confirm.",
+      onConfirm: () => {},
     });
+  };
+
+  const executeDeleteAccount = async () => {
+    if (!confirmPassword.trim()) {
+      setModalError("Please enter your password to confirm.");
+      return;
+    }
+
+    setSaving(true);
+    setModalError(null);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: confirmPassword,
+      });
+
+      if (authError)
+        throw new Error("Incorrect password. Verification failed.");
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const { error: funcError } = await supabase.functions.invoke(
+        "delete-user",
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
+      );
+
+      if (funcError) throw funcError;
+
+      await supabase.auth.signOut();
+      closeModal();
+      router.push("/");
+    } catch (err: any) {
+      console.error("Error en Edge Function:", err);
+      setModalError(err.message || "An error occurred.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading)
@@ -364,7 +418,6 @@ export default function AccountPage() {
                   Privacy control and account management
                 </p>
               </header>
-
               <div className="space-y-3">
                 <p className="text-[0.85em] font-medium text-[#555] dark:text-[#ccc] px-1">
                   Appearance
@@ -380,7 +433,6 @@ export default function AccountPage() {
                     </button>
                   ))}
                 </div>
-
                 <p className="text-[0.85em] font-medium text-[#555] dark:text-[#ccc] px-1 pt-4">
                   Data Management
                 </p>
@@ -397,7 +449,6 @@ export default function AccountPage() {
                     {saveHistory ? "On" : "Off"}
                   </span>
                 </button>
-
                 <button
                   onClick={handleClearFavorites}
                   className="w-full text-left px-4 py-3 border border-[#ededed] dark:border-[#333] rounded-xl text-sm hover:bg-[#f9f9f9] dark:hover:bg-[#1e1e1e] transition-colors cursor-pointer"
@@ -406,7 +457,6 @@ export default function AccountPage() {
                     Clear favorites
                   </span>
                 </button>
-
                 <button
                   onClick={handleDeleteHistory}
                   className="w-full text-left px-4 py-3 border border-[#ededed] dark:border-[#333] rounded-xl text-sm hover:bg-[#f9f9f9] dark:hover:bg-[#1e1e1e] transition-colors cursor-pointer"
@@ -415,7 +465,6 @@ export default function AccountPage() {
                     Delete search history
                   </span>
                 </button>
-
                 <p className="text-[0.85em] font-medium text-red-500 px-1 pt-4">
                   Danger Zone
                 </p>
@@ -436,16 +485,24 @@ export default function AccountPage() {
         title={modalConfig.title}
         message={modalConfig.message}
         onConfirm={modalConfig.onConfirm}
+        executeDeleteAccount={executeDeleteAccount}
         onClose={closeModal}
       >
         {modalConfig.title === "Delete Account" && (
-          <input
-            type="password"
-            placeholder="Enter your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full bg-transparent rounded-xl border border-[#ddd] dark:border-[#333] px-4 py-2.5 text-[0.95em] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0] dark:focus:ring-[#333] transition-all"
-          />
+          <div className="mt-4 space-y-4 text-left">
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full bg-transparent rounded-xl border border-[#ddd] dark:border-[#333] px-4 py-2.5 text-[0.95em] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0] dark:focus:ring-[#333] transition-all"
+            />
+            {modalError && (
+              <p className="text-xs text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                {modalError}
+              </p>
+            )}
+          </div>
         )}
       </ConfirmModal>
     </main>

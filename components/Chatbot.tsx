@@ -1,5 +1,6 @@
 "use client";
 import { useState, FormEvent, useRef, useEffect } from "react";
+import { useParams } from "next/navigation";
 import {
   Book as BookIcon,
   Heart,
@@ -160,9 +161,12 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+
+      const shouldSave = user?.user_metadata?.save_history !== false;
+
       let chatId = activeChatId;
 
-      if (user && !chatId) {
+      if (user && !chatId && shouldSave) {
         const { data: newChat } = await supabase
           .from("chats")
           .insert([{ user_id: user.id, title: prompt.substring(0, 35) }])
@@ -174,7 +178,7 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
         }
       }
 
-      if (user && chatId) {
+      if (user && chatId && shouldSave) {
         await supabase
           .from("chat_messages")
           .insert([{ chat_id: chatId, role: "user", content: prompt }]);

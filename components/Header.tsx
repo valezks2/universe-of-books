@@ -61,14 +61,14 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-[99] flex items-center justify-between border-b border-[#ededed] dark:border-[#333] bg-[#fafafb] dark:bg-[#111] px-[38px] py-[22px] max-[680px]:flex-col max-[680px]:gap-3 max-[680px]:px-2 max-[680px]:py-4 transition-colors duration-300">
+    <header className="sticky top-0 z-[99] flex items-center justify-between border-b border-[#ededed] dark:border-[#333] bg-[#fafafb] dark:bg-[#111] px-[38px] py-[10px] max-[680px]:flex-col max-[680px]:gap-3 max-[680px]:px-2 max-[680px]:py-4 transition-colors duration-300">
       <Link href="/">
         <Image
           src="/img/logo.png"
           alt="logo"
-          width={180}
-          height={60}
-          className="h-[50px] w-auto grayscale-0 dark:invert max-[680px]:h-[40px] select-none"
+          width={250}
+          height={80}
+          className="h-[80px] w-auto grayscale-0 dark:invert max-[680px]:h-[60px] select-none"
           priority
           draggable={false}
         />
