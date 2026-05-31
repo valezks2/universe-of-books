@@ -1,6 +1,7 @@
 "use client";
 import { useState, FormEvent, useRef, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Book as BookIcon,
   Heart,
@@ -110,9 +111,12 @@ function BookCards({ books }: { books: Book[] }) {
 
 export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
   const supabase = createClient();
+  const router = useRouter();
+  const pathname = usePathname();
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(!!initialChatId);
   const [activeChatId, setActiveChatId] = useState<string | null>(
     initialChatId || null,
   );
@@ -120,8 +124,22 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
   const chatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (pathname === "/") {
+      setMessages([]);
+      setActiveChatId(null);
+      setPrompt("");
+      setIsInitialLoading(false);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
     const loadHistory = async () => {
-      if (!initialChatId) return;
+      if (!initialChatId) {
+        setIsInitialLoading(false);
+        return;
+      }
+
+      setIsInitialLoading(true);
       const { data } = await supabase
         .from("chat_messages")
         .select("*")
@@ -138,6 +156,7 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
         );
         setActiveChatId(initialChatId);
       }
+      setIsInitialLoading(false);
     };
     loadHistory();
   }, [initialChatId, supabase]);
@@ -154,40 +173,50 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
 
     const userMessage: Message = { text: prompt, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
+    const currentPrompt = prompt;
     setPrompt("");
-    setLoading(true);
+    setLoading(false);
 
     try {
+      setLoading(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       const shouldSave = user?.user_metadata?.save_history !== false;
-
       let chatId = activeChatId;
 
       if (user && !chatId && shouldSave) {
-        const { data: newChat } = await supabase
+        const { data: newChat, error: chatError } = await supabase
           .from("chats")
-          .insert([{ user_id: user.id, title: prompt.substring(0, 35) }])
+          .insert([{ user_id: user.id, title: currentPrompt.substring(0, 35) }])
           .select()
           .single();
+
+        if (chatError) throw chatError;
+
         if (newChat) {
-          chatId = newChat.id;
+          chatId = newChat.id.toString();
           setActiveChatId(chatId);
+
+          window.history.pushState(null, "", `/history/${chatId}`);
         }
       }
 
       if (user && chatId && shouldSave) {
         await supabase
           .from("chat_messages")
-          .insert([{ chat_id: chatId, role: "user", content: prompt }]);
+          .insert([
+            { chat_id: parseInt(chatId), role: "user", content: currentPrompt },
+          ]);
       }
 
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({
+          messages: [{ role: "user", content: currentPrompt }],
+        }),
       });
 
       const data = await response.json();
@@ -197,45 +226,49 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
         const parsed = JSON.parse(data.text);
         if (parsed.books && Array.isArray(parsed.books)) {
           botMsg = { sender: "bot", books: parsed.books };
-          if (user && chatId) {
-            await supabase
-              .from("chat_messages")
-              .insert([
-                { chat_id: chatId, role: "bot", books_metadata: parsed.books },
-              ]);
+          if (user && chatId && shouldSave) {
+            await supabase.from("chat_messages").insert([
+              {
+                chat_id: parseInt(chatId),
+                role: "bot",
+                books_metadata: parsed.books,
+              },
+            ]);
           }
         } else {
           botMsg = { text: data.text, sender: "bot" };
-          if (user && chatId) {
+          if (user && chatId && shouldSave) {
             await supabase
               .from("chat_messages")
-              .insert([{ chat_id: chatId, role: "bot", content: data.text }]);
+              .insert([
+                { chat_id: parseInt(chatId), role: "bot", content: data.text },
+              ]);
           }
         }
       } catch {
         botMsg = { text: data.text, sender: "bot" };
-        if (user && chatId) {
+        if (user && chatId && shouldSave) {
           await supabase
             .from("chat_messages")
-            .insert([{ chat_id: chatId, role: "bot", content: data.text }]);
+            .insert([
+              { chat_id: parseInt(chatId), role: "bot", content: data.text },
+            ]);
         }
       }
 
       setMessages((prev) => [...prev, botMsg]);
-    } catch {
+    } catch (error) {
+      console.error("Error en el envío del chat:", error);
       const errorMsg: Message = {
         text: "Something went wrong.",
         sender: "bot",
       };
       setMessages((prev) => [...prev, errorMsg]);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user && activeChatId) {
+      if (activeChatId) {
         await supabase.from("chat_messages").insert([
           {
-            chat_id: activeChatId,
+            chat_id: parseInt(activeChatId),
             role: "bot",
             content: "Something went wrong.",
           },
@@ -245,6 +278,16 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
       setLoading(false);
     }
   };
+
+  if (isInitialLoading) {
+    return (
+      <main className="min-h-screen bg-white dark:bg-[#111] flex items-center justify-center">
+        <div className="text-sm text-[#666] dark:text-[#aaa] animate-pulse">
+          Loading...
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -293,7 +336,14 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="relative">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSubmit(e);
+          }}
+          className="relative"
+        >
           <input
             type="text"
             value={prompt}

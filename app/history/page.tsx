@@ -118,7 +118,8 @@ export default function HistoryPage() {
 
           {!loading &&
             filteredHistory.map((item) => (
-              <div
+              <Link
+                href={`/history/${item.id}`}
                 key={item.id}
                 className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition-all hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm cursor-pointer"
               >
@@ -146,11 +147,10 @@ export default function HistoryPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="text-[#999] group-hover:text-[#222] dark:group-hover:text-white transition flex-shrink-0 ml-2">
                   <ChevronRight size={20} />
                 </div>
-              </div>
+              </Link>
             ))}
         </div>
       </div>
