@@ -9,6 +9,7 @@ import {
   Search,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { HistorySkeleton } from "@/components/ui/HistorySkeleton";
 
 interface Chat {
   id: string;
@@ -93,7 +94,6 @@ export default function HistoryPage() {
             Check the recommendations that the chatbot has generated for you
           </p>
         </div>
-
         <div className="relative mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
           <input
@@ -106,52 +106,56 @@ export default function HistoryPage() {
         </div>
 
         <div className="space-y-4">
-          {loading && (
-            <p className="text-center py-12 text-[#999]">Loading...</p>
-          )}
-
-          {!loading && filteredHistory.length === 0 && (
-            <div className="text-center py-12 text-[#999]">
-              <p>No history found.</p>
-            </div>
-          )}
-
-          {!loading &&
-            filteredHistory.map((item) => (
-              <Link
-                href={`/history/${item.id}`}
-                key={item.id}
-                className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition-all hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm cursor-pointer"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] group-hover:bg-[#e7e7e7] dark:group-hover:bg-[#333] transition flex-shrink-0">
-                    <MessageSquare size={18} />
-                  </div>
-                  <div>
-                    <h3 className="text-[1em] font-medium leading-snug text-[#222] dark:text-[#eee] mb-1">
-                      "{item.title}"
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.85em] text-[#666] dark:text-[#aaa]">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={14} />
-                        {new Date(item.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Book size={14} />
-                        {item.recommendationsCount} recommendations
-                      </span>
+          {loading ? (
+            <HistorySkeleton />
+          ) : (
+            <>
+              {filteredHistory.length === 0 ? (
+                <div className="text-center py-12 text-[#999]">
+                  <p>No history found.</p>
+                </div>
+              ) : (
+                filteredHistory.map((item) => (
+                  <Link
+                    href={`/history/${item.id}`}
+                    key={item.id}
+                    className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition-all hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] group-hover:bg-[#e7e7e7] dark:group-hover:bg-[#333] transition flex-shrink-0">
+                        <MessageSquare size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-[1em] font-medium leading-snug text-[#222] dark:text-[#eee] mb-1">
+                          "{item.title}"
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.85em] text-[#666] dark:text-[#aaa]">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={14} />
+                            {new Date(item.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Book size={14} />
+                            {item.recommendationsCount} recommendations
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="text-[#999] group-hover:text-[#222] dark:group-hover:text-white transition flex-shrink-0 ml-2">
-                  <ChevronRight size={20} />
-                </div>
-              </Link>
-            ))}
+                    <div className="text-[#999] group-hover:text-[#222] dark:group-hover:text-white transition flex-shrink-0 ml-2">
+                      <ChevronRight size={20} />
+                    </div>
+                  </Link>
+                ))
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito_Sans, Poppins } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Suspense } from "react";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -41,9 +42,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Header />
-          {children}
-          <Footer />
+          <Suspense fallback={null}>
+            <Header />
+            {children}
+            <Footer />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

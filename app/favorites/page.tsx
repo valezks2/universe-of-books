@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Book as BookIcon, User, Trash2, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { FavoritesSkeleton } from "@/components/ui/FavoritesSkeleton";
 
 interface FavoriteBook {
   id: number;
@@ -102,55 +103,56 @@ export default function FavoritesSection() {
         </div>
 
         <div className="space-y-4">
-          {loading && (
-            <p className="text-center py-12 text-[#999]">Loading...</p>
-          )}
+          {loading ? (
+            <FavoritesSkeleton />
+          ) : (
+            <>
+              {filteredBooks.length === 0 ? (
+                <div className="text-center py-12 text-[#999]">
+                  <p>No favorites found.</p>
+                </div>
+              ) : (
+                filteredBooks.map((book) => (
+                  <div
+                    key={book.id}
+                    className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition-all hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] group-hover:bg-[#e7e7e7] dark:group-hover:bg-[#333] transition">
+                        <BookIcon size={18} />
+                      </div>
 
-          {!loading && filteredBooks.length === 0 && (
-            <div className="text-center py-12 text-[#999]">
-              <p>No favorites found.</p>
-            </div>
-          )}
+                      <div className="flex-1">
+                        <h3 className="text-[1.05em] font-medium leading-snug text-[#222] dark:text-[#eee] mb-0.5">
+                          {book.title}
+                        </h3>
 
-          {!loading &&
-            filteredBooks.map((book) => (
-              <div
-                key={book.id}
-                className="group flex items-center justify-between p-5 bg-white dark:bg-[#1a1a1a] border border-[#ededed] dark:border-[#333] rounded-2xl transition-all hover:border-[#ccc] dark:hover:border-[#444] hover:shadow-sm"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="mt-1 bg-[#f5f5f5] dark:bg-[#252525] p-2.5 rounded-full text-[#555] dark:text-[#aaa] group-hover:bg-[#e7e7e7] dark:group-hover:bg-[#333] transition">
-                    <BookIcon size={18} />
-                  </div>
+                        <div className="flex items-center gap-1.5 text-[0.85em] text-[#666] dark:text-[#aaa] mb-2">
+                          <User
+                            size={14}
+                            className="text-[#888] dark:text-[#777]"
+                          />
+                          <span className="font-medium">{book.author}</span>
+                        </div>
 
-                  <div className="flex-1">
-                    <h3 className="text-[1.05em] font-medium leading-snug text-[#222] dark:text-[#eee] mb-0.5">
-                      {book.title}
-                    </h3>
-
-                    <div className="flex items-center gap-1.5 text-[0.85em] text-[#666] dark:text-[#aaa] mb-2">
-                      <User
-                        size={14}
-                        className="text-[#888] dark:text-[#777]"
-                      />
-                      <span className="font-medium">{book.author}</span>
+                        <p className="text-[#888] dark:text-[#888] text-[0.9em] leading-relaxed max-w-md line-clamp-2">
+                          {book.synopsis}
+                        </p>
+                      </div>
                     </div>
 
-                    <p className="text-[#888] dark:text-[#888] text-[0.9em] leading-relaxed max-w-md line-clamp-2">
-                      {book.synopsis}
-                    </p>
+                    <button
+                      onClick={() => removeFavorite(book.id)}
+                      className="ml-4 p-2 text-[#999] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all cursor-pointer"
+                      title="Remove from favorites"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                </div>
-
-                <button
-                  onClick={() => removeFavorite(book.id)}
-                  className="ml-4 p-2 text-[#999] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all cursor-pointer"
-                  title="Remove from favorites"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))}
+                ))
+              )}
+            </>
+          )}
         </div>
       </div>
     </main>

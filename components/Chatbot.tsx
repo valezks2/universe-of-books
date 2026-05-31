@@ -10,6 +10,7 @@ import {
   Bot,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { ChatSkeleton } from "@/components/ui/ChatSkeleton";
 
 type Book = {
   title: string;
@@ -282,9 +283,7 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
   if (isInitialLoading) {
     return (
       <main className="min-h-screen bg-white dark:bg-[#111] flex items-center justify-center">
-        <div className="text-sm text-[#666] dark:text-[#aaa] animate-pulse">
-          Loading...
-        </div>
+        <ChatSkeleton />
       </main>
     );
   }

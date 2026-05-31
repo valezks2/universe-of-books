@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
+import { AccountSkeleton } from "@/components/ui/AccountSkeleton";
 
 type Section = "profile" | "advanced";
 
@@ -314,7 +315,7 @@ export default function AccountPage() {
   if (loading)
     return (
       <main className="min-h-screen bg-white dark:bg-[#111] flex items-center justify-center">
-        <p className="text-[#666] dark:text-[#aaa] animate-pulse">Loading...</p>
+        <AccountSkeleton />
       </main>
     );
 
