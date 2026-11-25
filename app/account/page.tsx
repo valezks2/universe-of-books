@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
@@ -136,7 +136,7 @@ export default function AccountPage() {
     getUser();
   }, [router, supabase]);
 
-  const handleSaveChanges = async (e: React.FormEvent) => {
+  const handleSaveChanges = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
     setMessage(null);

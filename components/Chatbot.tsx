@@ -1,5 +1,5 @@
 "use client";
-import { useState, FormEvent, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type SubmitEvent } from "react";
 import { useParams, usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import {
@@ -168,7 +168,7 @@ export default function Chatbot({ displayName, initialChatId }: ChatbotProps) {
     }
   }, [messages, loading]);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
